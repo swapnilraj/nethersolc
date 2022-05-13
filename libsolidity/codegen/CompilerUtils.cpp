@@ -707,7 +707,7 @@ void CompilerUtils::splitExternalFunctionType(bool _leftAligned)
 	{
 		m_context << Instruction::DUP1;
 		rightShiftNumberOnStack(32);
-		m_context << ((u256(1) << 160) - 1) << Instruction::AND << Instruction::SWAP1;
+		m_context << ((u256(1) << 256) - 1) << Instruction::AND << Instruction::SWAP1;
 	}
 	m_context << u256(0xffffffffUL) << Instruction::AND;
 }
@@ -717,7 +717,7 @@ void CompilerUtils::combineExternalFunctionType(bool _leftAligned)
 	// <address> <function_id>
 	m_context << u256(0xffffffffUL) << Instruction::AND << Instruction::SWAP1;
 	if (!_leftAligned)
-		m_context << ((u256(1) << 160) - 1) << Instruction::AND;
+		m_context << ((u256(1) << 256) - 1) << Instruction::AND;
 	leftShiftNumberOnStack(32);
 	m_context << Instruction::OR;
 	if (_leftAligned)
@@ -786,8 +786,7 @@ void CompilerUtils::convertType(
 		}
 		else if (targetTypeCategory == Type::Category::Address)
 		{
-			solAssert(typeOnStack.numBytes() * 8 == 160, "");
-			rightShiftNumberOnStack(256 - 160);
+			solAssert(typeOnStack.numBytes() * 8 == 256, "");
 		}
 		else
 		{
@@ -842,7 +841,7 @@ void CompilerUtils::convertType(
 					cleanHigherOrderBits(*typeOnStack);
 			}
 			else if (stackTypeCategory == Type::Category::Address)
-				solAssert(targetBytesType.numBytes() * 8 == 160, "");
+				solAssert(targetBytesType.numBytes() * 8 == 256, "");
 			leftShiftNumberOnStack(256 - targetBytesType.numBytes() * 8);
 		}
 		else if (targetTypeCategory == Type::Category::Enum)
@@ -880,7 +879,7 @@ void CompilerUtils::convertType(
 				targetTypeCategory == Type::Category::Address,
 				""
 			);
-			IntegerType addressType(160);
+			IntegerType addressType(256);
 			IntegerType const& targetType = targetTypeCategory == Type::Category::Integer
 				? dynamic_cast<IntegerType const&>(_targetType) : addressType;
 			if (stackTypeCategory == Type::Category::RationalNumber)
@@ -1481,6 +1480,7 @@ unsigned CompilerUtils::loadFromMemoryHelper(Type const& _type, bool _fromCallda
 	solAssert(numBytes <= 32, "Static memory load of more than 32 bytes requested.");
 	m_context << (_fromCalldata ? Instruction::CALLDATALOAD : Instruction::MLOAD);
 	bool cleanupNeeded = true;
+	solAssert(!isExternalFunctionType, "Due to Warp modifiactions, the function type is more than 32 bytes.");
 	if (isExternalFunctionType)
 		splitExternalFunctionType(true);
 	else if (numBytes != 32)
