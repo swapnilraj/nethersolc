@@ -438,15 +438,39 @@ BoolResult AddressType::isImplicitlyConvertibleTo(Type const& _other) const
 	return other.m_stateMutability <= m_stateMutability;
 }
 
+constexpr char const* WARP_ADDRESS_BYTES20_CAST_ERROR = "Warp changed address size to be 251 bits. \
+														Consider replacing bytes20 casts with \
+														bytes32 casts.";
+
+constexpr char const* WARP_ADDRESS_UINT160_CAST_ERROR = "Warp changed address size to be 251 bits. \
+														Consider replacing uint160 casts with \
+														uint256 casts.";
+
 BoolResult AddressType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 {
 	if (_convertTo.category() == category())
 		return true;
 	else if (auto const* contractType = dynamic_cast<ContractType const*>(&_convertTo))
 		return (m_stateMutability >= StateMutability::Payable) || !contractType->isPayable();
+	else if (m_stateMutability == StateMutability::NonPayable)
+	{
+		if (auto integerType = dynamic_cast<IntegerType const*>(&_convertTo))
+			if (!integerType->isSigned() && integerType->numBits() == 160)
+				return BoolResult::err(WARP_ADDRESS_UINT160_CAST_ERROR);
+			else
+				return (!integerType->isSigned() && integerType->numBits() == 256);
+		else if (auto fixedBytesType = dynamic_cast<FixedBytesType const*>(&_convertTo))
+		{
+			if (fixedBytesType->numBytes() == 20)
+				return BoolResult::err(WARP_ADDRESS_BYTES20_CAST_ERROR);
+			else
+				return (fixedBytesType->numBytes() == 32);
+		}
+	}
+
 	return isImplicitlyConvertibleTo(_convertTo) ||
 		_convertTo.category() == Category::Integer ||
-		(_convertTo.category() == Category::FixedBytes && 160 == dynamic_cast<FixedBytesType const&>(_convertTo).numBytes() * 8);
+		(_convertTo.category() == Category::FixedBytes && 256 == dynamic_cast<FixedBytesType const&>(_convertTo).numBytes() * 8);
 }
 
 string AddressType::toString(bool) const
@@ -1431,8 +1455,12 @@ BoolResult FixedBytesType::isImplicitlyConvertibleTo(Type const& _convertTo) con
 
 BoolResult FixedBytesType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 {
+	if (dynamic_cast<AddressType const*>(&_convertTo))
+		if (numBytes() == 20)
+			return BoolResult::err(WARP_ADDRESS_BYTES20_CAST_ERROR);
+
 	return (_convertTo.category() == Category::Integer && numBytes() * 8 == dynamic_cast<IntegerType const&>(_convertTo).numBits()) ||
-		(_convertTo.category() == Category::Address && numBytes() == 20) ||
+		(_convertTo.category() == Category::Address && numBytes() == 32) ||
 		_convertTo.category() == Category::FixedPoint ||
 		_convertTo.category() == category();
 }
@@ -3219,7 +3247,7 @@ bool FunctionType::leftAligned() const
 unsigned FunctionType::storageBytes() const
 {
 	if (m_kind == Kind::External)
-		return 20 + 4;
+		return 32 + 4;
 	else if (m_kind == Kind::Internal)
 		return 8; // it should really not be possible to create larger programs
 	else

@@ -305,25 +305,6 @@ std::vector<SimplificationRule<Pattern>> simplificationRuleListPart5(
 		[=]() { return A.d() >= Pattern::WordSize / 8; }
 	});
 
-	for (auto instr: {
-		Instruction::ADDRESS,
-		Instruction::CALLER,
-		Instruction::ORIGIN,
-		Instruction::COINBASE
-	})
-	{
-		assertThrow(Pattern::WordSize > 160, OptimizerException, "");
-		Word const mask = (Word(1) << 160) - 1;
-		rules.push_back({
-			Builtins::AND(Pattern{instr}, mask),
-			[=]() -> Pattern { return {instr}; }
-		});
-		rules.push_back({
-			Builtins::AND(mask, Pattern{instr}),
-			[=]() -> Pattern { return {instr}; }
-		});
-	}
-
 	return rules;
 }
 
