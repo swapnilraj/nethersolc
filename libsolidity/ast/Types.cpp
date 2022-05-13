@@ -405,6 +405,14 @@ BoolResult AddressType::isImplicitlyConvertibleTo(Type const& _other) const
 	return other.m_stateMutability <= m_stateMutability;
 }
 
+constexpr char const* WARP_ADDRESS_BYTES20_CAST_ERROR = "Warp changed address size to be 251 bits. "
+														"Consider replacing bytes20 casts with "
+														"bytes32 casts.";
+
+constexpr char const* WARP_ADDRESS_UINT160_CAST_ERROR = "Warp changed address size to be 251 bits. "
+														"Consider replacing uint160 casts with "
+														"uint256 casts.";
+
 BoolResult AddressType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 {
 	if ((_convertTo.category() == category()) || isImplicitlyConvertibleTo(_convertTo))
@@ -414,9 +422,17 @@ BoolResult AddressType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 	else if (m_stateMutability == StateMutability::NonPayable)
 	{
 		if (auto integerType = dynamic_cast<IntegerType const*>(&_convertTo))
-			return (!integerType->isSigned() && integerType->numBits() == 160);
+			if (!integerType->isSigned() && integerType->numBits() == 160)
+				return BoolResult::err(WARP_ADDRESS_UINT160_CAST_ERROR);
+			else
+				return (!integerType->isSigned() && integerType->numBits() == 256);
 		else if (auto fixedBytesType = dynamic_cast<FixedBytesType const*>(&_convertTo))
-			return (fixedBytesType->numBytes() == 20);
+		{
+			if (fixedBytesType->numBytes() == 20)
+				return BoolResult::err(WARP_ADDRESS_BYTES20_CAST_ERROR);
+			else
+				return (fixedBytesType->numBytes() == 32);
+		}
 	}
 
 	return false;
@@ -544,10 +560,11 @@ BoolResult IntegerType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 	else if (auto integerType = dynamic_cast<IntegerType const*>(&_convertTo))
 		return (numBits() == integerType->numBits()) || (isSigned() == integerType->isSigned());
 	else if (auto addressType = dynamic_cast<AddressType const*>(&_convertTo))
-		return
-			(addressType->stateMutability() != StateMutability::Payable) &&
-			!isSigned() &&
-			(numBits() == 160);
+		if (!isSigned() && numBits() == 160)
+			return BoolResult::err(WARP_ADDRESS_UINT160_CAST_ERROR);
+		else
+			return (addressType->stateMutability() != StateMutability::Payable)
+					&& !isSigned() && (numBits() == 256);
 	else if (auto fixedBytesType = dynamic_cast<FixedBytesType const*>(&_convertTo))
 		return (!isSigned() && (numBits() == fixedBytesType->numBytes() * 8));
 	else if (dynamic_cast<EnumType const*>(&_convertTo))
@@ -961,7 +978,7 @@ BoolResult RationalNumberType::isExplicitlyConvertibleTo(Type const& _convertTo)
 			!isNegative() &&
 			!isFractional() &&
 			integerType() &&
-			(integerType()->numBits() <= 160));
+			(integerType()->numBits() <= 256));
 	else if (category == Category::Integer)
 		return false;
 	else if (auto enumType = dynamic_cast<EnumType const*>(&_convertTo))
@@ -1272,9 +1289,10 @@ BoolResult FixedBytesType::isExplicitlyConvertibleTo(Type const& _convertTo) con
 	else if (auto integerType = dynamic_cast<IntegerType const*>(&_convertTo))
 		return (!integerType->isSigned() && integerType->numBits() == numBytes() * 8);
 	else if (auto addressType = dynamic_cast<AddressType const*>(&_convertTo))
-		return
-			(addressType->stateMutability() != StateMutability::Payable) &&
-			(numBytes() == 20);
+		if (numBytes() == 20)
+			return BoolResult::err(WARP_ADDRESS_BYTES20_CAST_ERROR);
+		else
+			return (addressType->stateMutability() != StateMutability::Payable) && (numBytes() == 32);
 	else if (auto fixedPointType = dynamic_cast<FixedPointType const*>(&_convertTo))
 		return fixedPointType->numBits() == numBytes() * 8;
 
@@ -3093,7 +3111,7 @@ bool FunctionType::leftAligned() const
 unsigned FunctionType::storageBytes() const
 {
 	if (m_kind == Kind::External)
-		return 20 + 4;
+		return 32 + 4;
 	else if (m_kind == Kind::Internal)
 		return 8; // it should really not be possible to create larger programs
 	else
