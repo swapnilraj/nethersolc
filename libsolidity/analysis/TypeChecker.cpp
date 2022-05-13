@@ -3587,17 +3587,16 @@ void TypeChecker::endVisit(Literal const& _literal)
 		_literal.annotation().type = TypeProvider::address();
 
 		string msg;
-		if (_literal.valueWithoutUnderscores().length() != 42) // "0x" + 40 hex digits
+		if (_literal.valueWithoutUnderscores().length() != 65) // "0x" + 63 hex digits
 			// looksLikeAddress enforces that it is a hex literal starting with "0x"
 			msg =
-				"This looks like an address but is not exactly 40 hex digits. It is " +
+				"This looks like an address but is not exactly 63 hex digits. It is " +
 				to_string(_literal.valueWithoutUnderscores().length() - 2) +
 				" hex digits.";
 		else if (!_literal.passesAddressChecksum())
 		{
-			msg = "This looks like an address but has an invalid checksum.";
-			if (!_literal.getChecksummedAddress().empty())
-				msg += " Correct checksummed address: \"" + _literal.getChecksummedAddress() + "\".";
+			msg = "This looks like an address but it is bigger than a STARKNET_FIELD_PRIME." +
+				  " For more information please see https://starknet.io/docs/how_cairo_works/cairo_intro.html#field-elements";
 		}
 
 		if (!msg.empty())

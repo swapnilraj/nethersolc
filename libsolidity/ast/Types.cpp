@@ -440,11 +440,11 @@ BoolResult AddressType::isImplicitlyConvertibleTo(Type const& _other) const
 	return other.m_stateMutability <= m_stateMutability;
 }
 
-constexpr char const* WARP_ADDRESS_BYTES20_CAST_ERROR = "Warp changed address size to be 256 bits. "
+constexpr char const* WARP_ADDRESS_BYTES20_CAST_ERROR = "Warp changed address size to be 251 bits. "
 														"Consider replacing bytes20 casts with "
 														"bytes32 casts.";
 
-constexpr char const* WARP_ADDRESS_UINT160_CAST_ERROR = "Warp changed address size to be 256 bits. "
+constexpr char const* WARP_ADDRESS_UINT160_CAST_ERROR = "Warp changed address size to be 251 bits. "
 														"Consider replacing uint160 casts with "
 														"uint256 casts.";
 
