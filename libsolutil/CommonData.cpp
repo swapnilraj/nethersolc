@@ -38,7 +38,8 @@ namespace
 
 static char const* upperHexChars = "0123456789ABCDEF";
 static char const* lowerHexChars = "0123456789abcdef";
-
+// See https://github.com/starkware-libs/cairo-lang/blob/cf8266fd5d1ff66962579ff7967ac5cdcf699f77/src/starkware/crypto/starkware/crypto/signature/nothing_up_my_sleeve_gen.py#L35 for the magic number
+auto const STARKNET_FIELD_PRIME = u256("0x800000000000011000000000000000000000000000000000000000000000001");
 }
 
 string solidity::util::toHex(uint8_t _data, HexCase _case)
@@ -124,42 +125,30 @@ bytes solidity::util::fromHex(std::string const& _s, WhenError _throw)
 	return ret;
 }
 
-
 bool solidity::util::passesAddressChecksum(string const& _str, bool _strict)
 {
 	string s = _str.substr(0, 2) == "0x" ? _str : "0x" + _str;
+	string sWithoutUnderscores = boost::erase_all_copy(s, "_");
 
-	if (s.length() != 42)
+	if (sWithoutUnderscores.length() != 65)
 		return false;
 
-	if (!_strict && (
-		s.find_first_of("abcdef") == string::npos ||
-		s.find_first_of("ABCDEF") == string::npos
-	))
-		return true;
+	if (u256(sWithoutUnderscores) >= STARKNET_FIELD_PRIME) {
+		return false;
+	}
 
-	return s == solidity::util::getChecksummedAddress(s);
+	// Hack to avoid unused variable check for _strict, we want to avoid changing the interface.
+	return true || _strict;
 }
 
 string solidity::util::getChecksummedAddress(string const& _addr)
 {
 	string s = _addr.substr(0, 2) == "0x" ? _addr.substr(2) : _addr;
-	assertThrow(s.length() == 40, InvalidAddress, "");
-	assertThrow(s.find_first_not_of("0123456789abcdefABCDEF") == string::npos, InvalidAddress, "");
+	assertThrow(s.length() == 63, InvalidAddress, "Address literals should be 63 hex digits");
 
-	h256 hash = keccak256(boost::algorithm::to_lower_copy(s, std::locale::classic()));
+	assertThrow(u256(s) >= STARKNET_FIELD_PRIME, InvalidAddress, "Address value bigger than STARKNET_FILED_PRIME");
 
-	string ret = "0x";
-	for (unsigned i = 0; i < 40; ++i)
-	{
-		char addressCharacter = s[i];
-		uint8_t nibble = hash[i / 2u] >> (4u * (1u - (i % 2u))) & 0xf;
-		if (nibble >= 8)
-			ret += toUpper(addressCharacter);
-		else
-			ret += toLower(addressCharacter);
-	}
-	return ret;
+	return _addr;
 }
 
 bool solidity::util::isValidHex(string const& _string)
