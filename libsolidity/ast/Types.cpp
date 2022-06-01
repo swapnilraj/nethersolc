@@ -1455,7 +1455,7 @@ BoolResult FixedBytesType::isImplicitlyConvertibleTo(Type const& _convertTo) con
 
 BoolResult FixedBytesType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 {
-	if (auto addressType = dynamic_cast<AddressType const*>(&_convertTo))
+	if (dynamic_cast<AddressType const*>(&_convertTo))
 		if (numBytes() == 20)
 			return BoolResult::err(WARP_ADDRESS_BYTES20_CAST_ERROR);
 
