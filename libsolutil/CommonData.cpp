@@ -38,8 +38,7 @@ namespace
 
 static char const* upperHexChars = "0123456789ABCDEF";
 static char const* lowerHexChars = "0123456789abcdef";
-// See https://github.com/starkware-libs/cairo-lang/blob/cf8266fd5d1ff66962579ff7967ac5cdcf699f77/src/starkware/crypto/starkware/crypto/signature/nothing_up_my_sleeve_gen.py#L35 for the magic number
-auto const STARKNET_FIELD_PRIME = u256("0x800000000000011000000000000000000000000000000000000000000000001");
+auto const MAX_251_BITS = u256("0x800000000000000000000000000000000000000000000000000000000000000");
 }
 
 string solidity::util::toHex(uint8_t _data, HexCase _case)
@@ -133,7 +132,7 @@ bool solidity::util::passesAddressChecksum(string const& _str, bool _strict)
 	if (sWithoutUnderscores.length() != 65)
 		return false;
 
-	if (u256(sWithoutUnderscores) >= STARKNET_FIELD_PRIME) {
+	if (u256(sWithoutUnderscores) >= MAX_251_BITS) {
 		return false;
 	}
 
@@ -146,7 +145,7 @@ string solidity::util::getChecksummedAddress(string const& _addr)
 	string s = _addr.substr(0, 2) == "0x" ? _addr.substr(2) : _addr;
 	assertThrow(s.length() == 63, InvalidAddress, "Address literals should be 63 hex digits");
 
-	assertThrow(u256(s) >= STARKNET_FIELD_PRIME, InvalidAddress, "Address value bigger than STARKNET_FILED_PRIME");
+	assertThrow(u256(s) >= MAX_251_BITS, InvalidAddress, "Address value bigger than 2^251");
 
 	return _addr;
 }
