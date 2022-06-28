@@ -53,6 +53,9 @@ if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MA
 	add_compile_options(-Wimplicit-fallthrough)
 	add_compile_options(-Wsign-conversion)
 	add_compile_options(-Wconversion)
+	# So that we can build using newer cpp compilers
+	# I know its hacky but gets the job done
+	add_compile_options(-Wno-deprecated)
 
 	eth_add_cxx_compiler_flag_if_supported(
 		$<$<COMPILE_LANGUAGE:CXX>:-Wextra-semi>
