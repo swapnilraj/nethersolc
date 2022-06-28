@@ -113,7 +113,8 @@ void CommonOptions::addOptions()
 		("enforce-gas-cost-min-value", po::value(&enforceGasTestMinValue)->default_value(enforceGasTestMinValue), "Threshold value to enforce adding gas checks to a test.")
 		("abiencoderv1", po::bool_switch(&useABIEncoderV1)->default_value(useABIEncoderV1), "enables abi encoder v1")
 		("show-messages", po::bool_switch(&showMessages)->default_value(showMessages), "enables message output")
-		("show-metadata", po::bool_switch(&showMetadata)->default_value(showMetadata), "enables metadata output");
+		("show-metadata", po::bool_switch(&showMetadata)->default_value(showMetadata), "enables metadata output")
+		("print-test-expectations", po::bool_switch(&printTestExpectation)->default_value(printTestExpectation), "Prints test file expectations");
 }
 
 void CommonOptions::validate() const

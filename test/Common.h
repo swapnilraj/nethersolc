@@ -71,6 +71,7 @@ struct CommonOptions
 	bool showMetadata = false;
 	size_t batches = 1;
 	size_t selectedBatch = 0;
+	bool printTestExpectation = false;
 
 	langutil::EVMVersion evmVersion() const;
 
