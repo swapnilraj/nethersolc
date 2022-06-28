@@ -105,7 +105,8 @@ CommonOptions::CommonOptions(std::string _caption):
 		("enforce-via-yul", po::bool_switch(&enforceViaYul), "Enforce compiling all tests via yul to see if additional tests can be activated.")
 		("abiencoderv2", po::bool_switch(&useABIEncoderV2), "enables abi encoder v2")
 		("show-messages", po::bool_switch(&showMessages), "enables message output")
-		("show-metadata", po::bool_switch(&showMetadata), "enables metadata output");
+		("show-metadata", po::bool_switch(&showMetadata), "enables metadata output")
+		("print-test-expectations", po::bool_switch(&printTestExpectation)->default_value(printTestExpectation), "Prints test file expectations");
 }
 
 void CommonOptions::validate() const
@@ -153,13 +154,6 @@ bool CommonOptions::parse(int argc, char const* const* argv)
 		std::string evmone = envOrDefaultPath("ETH_EVMONE", evmoneFilename);
 		if (!evmone.empty())
 			vmPaths.emplace_back(evmone);
-		else
-		{
-			std::cout << "Unable to find " << solidity::test::evmoneFilename
-				 << ". Please provide the path using --vm <path>." << std::endl;
-			std::cout << "You can download it at" << std::endl;
-			std::cout << solidity::test::evmoneDownloadLink << std::endl;
-		}
 	}
 
 	if (ewasm) {

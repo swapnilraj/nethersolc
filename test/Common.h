@@ -60,6 +60,7 @@ struct CommonOptions: boost::noncopyable
 	bool useABIEncoderV2 = false;
 	bool showMessages = false;
 	bool showMetadata = false;
+	bool printTestExpectation = false;
 
 	langutil::EVMVersion evmVersion() const;
 
